@@ -5,14 +5,14 @@ import pandas as pd
 import quandl
 from matplotlib import style
 
-from quantipy.data_management.data_conversion import OptionVueConversion
+from quantipy.data_management.data_import import OptionVueImport
 
 api_key = "EzveDSFN9V7T3JGstQ_M"
 pickle_file = "../Data/us_states.pkl"
 
 
 def convert_optionvue_csv(filename):
-    optionvue_converter = OptionVueConversion()
+    optionvue_converter = OptionVueImport()
     assets = []
     asset_data = []
     option_data = []

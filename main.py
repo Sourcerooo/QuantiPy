@@ -2,9 +2,9 @@
 
 import quantipy.basics.data as qdata
 
-import quantipy.data_management.data_conversion as conv
+import quantipy.data_management.data_import as conv
 
-imp_ov = conv.OptionVueConversion()
+imp_ov = conv.OptionVueImport()
 
 stocks, futures, options = imp_ov.import_csv("./Data/OptionVue/20150107.csv")
 

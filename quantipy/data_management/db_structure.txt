@@ -67,7 +67,8 @@ Account
 
     Commission
         ID                                  : Text(36)
-        Account ID                          : Text(20)
+        Account ID                          : Text(36)
+        Description                         : Text(20)
         Stocks Base Fee                     : Float
         Stocks Per Stock Fee Open           : Float
         Stocks Per Stock Fee Close          : Float

@@ -3,7 +3,7 @@ import datetime
 from quantipy.basics.data import StocksData, FuturesData, OptionsData
 
 
-class BaseConversion(object):
+class BaseImport(object):
     def __init__(self):
         self.stock_mapping = {}
         self.futures_mapping = {}
@@ -11,30 +11,83 @@ class BaseConversion(object):
         self.stocks = StocksData()
         self.futures = FuturesData()
         self.options = OptionsData()
-        self.create_stock_mapping()
-        self.create_futures_mapping()
-        self.create_options_mapping()
+        self._create_stock_mapping()
+        self._create_futures_mapping()
+        self._create_options_mapping()
 
-
-    def create_stock_mapping(self):
+    def _create_stock_mapping(self):
         for index, key in enumerate(self.stocks.__dict__.keys()):
             self.stock_mapping[key] = index
 
-    def create_futures_mapping(self):
+    def _create_futures_mapping(self):
         for index, key in enumerate(self.futures.__dict__.keys()):
             self.futures_mapping[key] = index
 
-    def create_options_mapping(self):
-
+    def _create_options_mapping(self):
         for index, key in enumerate(self.options.__dict__.keys()):
             self.options_mapping[key] = index
 
-    def _map_data(self, data, mapping):
+    def _type_conversion(self, data, import_type="S"):
+        obj = 0
+        if import_type == "S":
+            obj = self.stocks
+        elif import_type == "F":
+            obj = self.futures
+        elif import_type == "O":
+            obj = self.options
+
+        if obj:
+            for index, key in enumerate(obj.__dict__.keys()):
+                value = obj.__getattribute__(key)
+                if type(value) is int:
+                    try:
+                        if not data[index]:
+                            data[index] = 0
+                        else:
+                            data[index] = int(data[index])
+                    except IndexError:
+                        pass
+                elif type(value) is float:
+                    try:
+                        if not data[index]:
+                            data[index] = 0.0
+                        else:
+                            data[index] = float(data[index])
+                    except IndexError:
+                        pass
+                else:
+                    try:
+                        if not data[index]:
+                            data[index] = ""
+                        else:
+                            data[index] = str(data[index])
+                    except IndexError:
+                        pass
+
+        return data
+
+    def _map_data(self, data, import_type="S"):
+        obj = 0
+        mapping = {}
+        if import_type == "S":
+            obj = self.stocks
+            mapping = self.stock_mapping
+        elif import_type == "F":
+            obj = self.futures
+            mapping = self.futures_mapping
+        elif import_type == "O":
+            obj = self.options
+            mapping = self.options_mapping
+
         data_mapped = []
-        for key, value in mapping.items():
+        for key in obj.__dict__.keys():
             try:
-                data_mapped.append(data[value])
+                data_mapped.append(data[mapping[key]])
             except IndexError:
+                data_mapped.append("NaN")
+                continue
+            except KeyError:
+                data_mapped.append("")
                 continue
         return data_mapped
 
@@ -44,11 +97,40 @@ class BaseConversion(object):
     def _data_cleansing(self, data):
         return data
 
-    def import_csv(self, filename, delimiter=","):
-        pass
+    def import_data(self, data, import_type="S"):
+        data = self._data_cleansing(data)
+        data = self._enhance_data(data)
+        if import_type == "S":
+            data = self._map_data(data, import_type)
+            data = self._type_conversion(data, "S")
+        elif import_type == "F":
+            data = self._map_data(data, import_type)
+            data = self._type_conversion(data, "F")
+        elif import_type == "O":
+            data = self._map_data(data, import_type)
+            data = self._type_conversion(data, "O")
+        return data
 
 
-class OptionVueConversion(BaseConversion):
+class BaseCSVImport(BaseImport):
+    def __init__(self):
+        super().__init__()
+
+    def import_csv(self, filename, skip_header=False, delimiter=",", import_type="S"):
+        result_data = []
+        with open(filename, "r") as inp_file:
+            csv_data = csv.reader(inp_file, delimiter=delimiter)
+            if skip_header:
+                next(csv_data)
+            for data in csv_data:
+                data = self.import_data(data, import_type)
+                if data:
+                    result_data.append(data)
+
+        return result_data
+
+
+class OptionVueImport(BaseCSVImport):
 
     def __init__(self):
         super().__init__()
@@ -81,8 +163,8 @@ class OptionVueConversion(BaseConversion):
             "exp_date": 13,
             "date": 10,
             "time": 7,
-            "strike": 34,
             "p_c": 26,
+            "strike": 34,
             "dte": 41,
             "bid": 9,
             "ask": 8,
@@ -119,7 +201,6 @@ class OptionVueConversion(BaseConversion):
             "market_price": 17,
             "atm_sv": 36
         }
-
 
     def _enhance_data(self, data):
         data = self._data_cleansing(data)
@@ -164,41 +245,9 @@ class OptionVueConversion(BaseConversion):
 
         return data
 
-    def _type_conversion(self, data, mapping, obj):
-        for key, value in mapping.items():
-            if type(obj.__getattribute__(key)) is int:
-                try:
-                    if not data[value]:
-                        data[value] = 0
-                    else:
-                        data[value] = int(data[value])
-                except IndexError:
-                    pass
-            elif type(obj.__getattribute__(key)) is float:
-                try:
-                    if not data[value]:
-                        data[value] = 0.0
-                    else:
-                        data[value] = float(data[value])
-                except IndexError:
-                    pass
-            else:
-                try:
-                    if not data[value]:
-                        data[value] = ""
-                    else:
-                        data[value] = str(data[value])
-                except IndexError:
-                    pass
-        return data
-
     def _data_cleansing(self, data):
         if float(data[self.stock_mapping["market_price"]]) <= 0:
             return []
-
-        data = self._type_conversion(data, self.stock_mapping, self.stocks)
-        data = self._type_conversion(data, self.futures_mapping, self.futures)
-        data = self._type_conversion(data, self.options_mapping, self.options)
 
         # Add century to date format yyyyMMdd
         if data[self.stock_mapping["date"]]:
@@ -208,22 +257,25 @@ class OptionVueConversion(BaseConversion):
 
         return data
 
-    def import_csv(self, filename, delimiter=","):
+    def import_csv(self, filename, skip_header=False, delimiter=",", import_type="OV"):
         stock_data = []
         option_data = []
         future_data = []
         with open(filename, "r") as inp_file:
             csv_data = csv.reader(inp_file, delimiter=delimiter)
-            # Skip Header
-            next(csv_data)
+            if skip_header:
+                next(csv_data)
             for data in csv_data:
                 data = self._enhance_data(data)
                 if data:
                     if data[self.type_field] == "S":
-                        stock_data.append(self._map_data(data, self.stock_mapping))
+                        data = self._type_conversion(self._map_data(data, "S"), "S")
+                        stock_data.append(data)
                     elif data[self.type_field] == "F":
-                        future_data.append(self._map_data(data, self.futures_mapping))
+                        data = self._type_conversion(self._map_data(data, "F"), "F")
+                        future_data.append(data)
                     elif data[self.type_field] in ["O", "G"]:
-                        option_data.append(self._map_data(data, self.options_mapping))
+                        data = self._type_conversion(self._map_data(data, "O"), "O")
+                        option_data.append(data)
 
         return stock_data, future_data, option_data
