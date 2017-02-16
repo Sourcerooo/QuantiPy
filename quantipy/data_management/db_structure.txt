@@ -1,0 +1,140 @@
+Futures Data
+    Symbol          : Text(5?)    (Key)  (Index 1)           #Symbol of the future contract
+    Expiration Date : Date        (Key)                      #Date the future contract expires
+    Date            : Date        (Key)  (Index 1)           #Date the data was captured
+    Description     : Text(30?)
+    Open            : Float
+    High            : Float
+    Low             : Float
+    Close           : Float
+    Last            : Float
+    Volume          : Int
+    Change          : Float
+    Change_Pct      : Float
+    Open_Interest   : Int
+    Bid             : Float
+    Ask             : Float
+
+Stock Data
+    Symbol         : Text(5?)    (Key)
+    Date           : Datetime    (Key)
+    Description    : Text(30?)
+    Open           : Float
+    High           : Float
+    Low            : Float
+    Close          : Float
+    Last           : Float
+    Volume         : Int
+    Change         : Float
+    Change_Pct     : Float
+    Open_Interest  : Int
+    Bid            : Float
+    Ask            : Float
+
+
+    Options Data
+        Underlying Symbol    : Text(5?)  (Key)  (Index 1)
+        Expiration Date      : Datetime  (Key)
+        Date                 : Datetime  (Key)  (Index 1)
+        Put_Call_Indicator   : Text(1)   (Key)
+        Strike               : Float     (Key)
+        Bid                  : Float
+        Ask                  : Float
+        Market Price         : Float  ## (Ask - Bid) / 2
+        Volume               : Int
+        Open Interest        : Int
+        Implied Volatility   : Float
+        Delta                : Float
+        Theta                : Float
+        Gamma                : Float
+        Vega                 : Float
+        Rho                  : Float
+
+
+Account
+    ID                       : Text(36)
+    Description              : Text(40)
+    Interest Rate on Money   : Float
+    Security Init Margin     : Float
+    Security Maint Margin    : Float
+    Naked Put Factor         : Float
+    Naked Call Factor        : Float
+    SPAN Init Margin         : Float
+    SPAN Maint Margin        : Float
+    Balance                  : Float
+    Currency                 : Text(3)
+
+
+    Commission
+        ID                                  : Text(36)
+        Account ID                          : Text(20)
+        Stocks Base Fee                     : Float
+        Stocks Per Stock Fee Open           : Float
+        Stocks Per Stock Fee Close          : Float
+        Stocks Minimum Fee                  : Float
+        Options Base Fee                    : Float
+        Options Per Contract Fee Open       : Float
+        Options Per Contract Fee Close      : Float
+        Options Minimum Fee                 : Float
+        Futures Base Fee                    : Float
+        Futures Per Contract Fee Open       : Float
+        Futures Per Contract Fee Close      : Float
+        Futures Minimum Fee                 : Float
+
+
+Strategy To System
+    Strategy ID
+    System ID
+    System Parameters Group ID
+
+Strategy
+    ID
+    Name
+    Description
+    Account ID
+    Evaluation From Date
+    Evaluation To Date
+    Include Commissions
+    Include Slippage
+    Compound Indicator
+    Money Risk
+    Percent Risk
+
+
+    Strategy Results
+        Profit Factor
+        Proit Balance
+        Total Number of Trades
+        Winning Trades
+        Losing Trades
+        Ratio Win/Loss
+        Ratio Gain/Lose Money
+        Average Winner in Money
+        Average Loser in Money
+        Biggest Winner in Money
+        Biggest Loser in Money
+        Biggest Drawdown in Money
+        Biggest Drawdown in %
+        Max Consecutive Winner
+        Max Consecutive Loser
+        Average Duration in Trade
+        Average Duration in Winner
+        Average Duration in Loser
+
+
+System
+    ID
+    Description
+    Classname
+
+    System Parameters Group
+        ID
+        System ID
+
+        System Parameters
+            ID
+            System Paramers Group ID
+            Parameter Name
+            Parameter Type
+            Parameter Value Low
+            Parameter Value High

@@ -1,0 +1,32 @@
+Data
+    ## This is just a folder, not a package
+
+    Database
+        ## Here will be the database file(s)
+    [DataProvider]
+        ## For each Dataprovider, create a folder and insert all raw data files in that folder
+
+quantipy{PKG}
+    ## Main package for Quantipy
+    data_management{PKG}
+        ## Package for everything that has to do with data handling
+
+        sqlite_wrapper.py  ## Module to wrap sqlite3 functionality
+        mysql_wrapper.py   ## Module to wrap mySQL functionality
+        data_conversion.py ## Module with classes that convert raw data to database format, this is done with
+                           ## lists instead of dictionaries (or pandas) for performance reason
+        data_setup.py      ## Module to load data from raw files into database
+
+    systems{PKG}
+        ## Package in which all systems should reside in
+        base_system.py  ## This module will contain the base class from which all systems are derived
+                        ## data structure for everything related to systems is also defined here
+
+        stock_system{PKG}
+            ## Package for all different stock system modules
+            [SystemName].py ## Each System will have it's separate class and python module
+        options_system{PKG}
+            ## Package for all different option system modules
+            [SystemName].py ## Each System will have it's separate class and python module
+
+    strategy.py  ##Contains the class that will control the strategy flow
