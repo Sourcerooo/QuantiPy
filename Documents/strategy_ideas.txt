@@ -1,0 +1,25 @@
+Orderflow:
+    Observation of orderflow can lead to prediction in price => If buying/selling changes over short time period,
+    this might indicate a trend change
+
+Technical Indications:
+    Price behaves the same at specific zones => supply/demand zones indicate areas where trades can be initiated
+
+Mean reversion:
+    Price always reverts to the mean (Kostolany Man-Dog-Analogy) => If price is too far away from its mean, price
+    either reverts or goes sideways
+
+Markets are 20% trending and 80% consolidating => Neutral strategies should win at most market conditions
+
+Small markets are less efficient than big markets => Do the same concepts apply independent of market capitalization?
+    Small markets don't offer the liquidity needed for big players, which might result in non-arbitraged edges
+
+Risk is overstated:
+    To hedge risk, more is paid than the risk is actually worth => Buying risk should result in profit
+
+Risk distribution:
+    Current risk is overstated while tail risk is understated => Buying current risk and hedging against tail risk
+    should result in profit
+
+
+

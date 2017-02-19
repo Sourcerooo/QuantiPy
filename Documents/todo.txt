@@ -1,0 +1,4 @@
+Design Decisions:
+    - Event-based vs. Iterative Design
+    - Which DB to use
+    - Strategy-System-Portfolio Design

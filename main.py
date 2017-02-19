@@ -4,16 +4,28 @@ import quantipy.basics.data as qdata
 
 import quantipy.data_management.data_import as conv
 
-imp_ov = conv.OptionVueImport()
+import pandas as pd
 
-stocks, futures, options = imp_ov.import_csv("./Data/OptionVue/20150107.csv")
 
-for option in options:
-    print(option)
-# myStrat = quantipy.strategy.Strategy()
-# myStrat.evaluate_systems()
-# for key, value in myStrat.results.items():
-#     print(myStrat.results[key])
+
+#imp_ov = conv.OptionVueImport()
+#stock_data, future_date, option_date = imp_ov.import_data(filename="./Data/OptionVue/20150106.csv")
+#print(option_date)
+
+# stocks, futures, options = imp_ov.import_csv("./Data/OptionVue/20150106.csv")
+#
+# for stock in stocks:
+#     print(stock)
+
+import quantipy.data_management.data_import as di
+imp_yahoo = di.YahooStockImport()
+
+stocks = imp_yahoo.import_data(stock_symbol=["T"], from_date="1970-01-01", to_date="2017-02-16", reload_data=False,
+                               reload_sp500_symbols=False)
+
+print(stocks.head())
+# for stock in stocks:
+#     print(stock)
 
 
 

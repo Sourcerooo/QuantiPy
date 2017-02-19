@@ -1,281 +1,255 @@
-import csv
+import os
 import datetime
-from quantipy.basics.data import StocksData, FuturesData, OptionsData
-
+import pickle
+import requests
+import bs4 as bs
+import pandas as pd
+import pandas_datareader as web
 
 class BaseImport(object):
+    mapping = {}
+    datatypes = {}
+
     def __init__(self):
-        self.stock_mapping = {}
-        self.futures_mapping = {}
-        self.options_mapping = {}
-        self.stocks = StocksData()
-        self.futures = FuturesData()
-        self.options = OptionsData()
-        self._create_stock_mapping()
-        self._create_futures_mapping()
-        self._create_options_mapping()
+        self.dataframe = pd.DataFrame()
 
-    def _create_stock_mapping(self):
-        for index, key in enumerate(self.stocks.__dict__.keys()):
-            self.stock_mapping[key] = index
+    def _enhance_data(self):
+        pass
 
-    def _create_futures_mapping(self):
-        for index, key in enumerate(self.futures.__dict__.keys()):
-            self.futures_mapping[key] = index
+    def _data_cleansing(self):
+        pass
 
-    def _create_options_mapping(self):
-        for index, key in enumerate(self.options.__dict__.keys()):
-            self.options_mapping[key] = index
+    def _remap(self, mapping):
+        self.dataframe.rename(columns=mapping, inplace=True)
 
-    def _type_conversion(self, data, import_type="S"):
-        obj = 0
-        if import_type == "S":
-            obj = self.stocks
-        elif import_type == "F":
-            obj = self.futures
-        elif import_type == "O":
-            obj = self.options
+    def import_data(self, **kwargs):
+        if "datasource" not in kwargs:
+            if self.dataframe.empty:
+                return
+        else:
+            self.dataframe = kwargs["datasource"]
 
-        if obj:
-            for index, key in enumerate(obj.__dict__.keys()):
-                value = obj.__getattribute__(key)
-                if type(value) is int:
-                    try:
-                        if not data[index]:
-                            data[index] = 0
-                        else:
-                            data[index] = int(data[index])
-                    except IndexError:
-                        pass
-                elif type(value) is float:
-                    try:
-                        if not data[index]:
-                            data[index] = 0.0
-                        else:
-                            data[index] = float(data[index])
-                    except IndexError:
-                        pass
-                else:
-                    try:
-                        if not data[index]:
-                            data[index] = ""
-                        else:
-                            data[index] = str(data[index])
-                    except IndexError:
-                        pass
+        if "mapping" in kwargs:
+            self._remap(kwargs["mapping"])
+        else:
+            self._remap(self.mapping)
 
-        return data
+        self._data_cleansing()
+        self._enhance_data()
 
-    def _map_data(self, data, import_type="S"):
-        obj = 0
-        mapping = {}
-        if import_type == "S":
-            obj = self.stocks
-            mapping = self.stock_mapping
-        elif import_type == "F":
-            obj = self.futures
-            mapping = self.futures_mapping
-        elif import_type == "O":
-            obj = self.options
-            mapping = self.options_mapping
-
-        data_mapped = []
-        for key in obj.__dict__.keys():
-            try:
-                data_mapped.append(data[mapping[key]])
-            except IndexError:
-                data_mapped.append("NaN")
-                continue
-            except KeyError:
-                data_mapped.append("")
-                continue
-        return data_mapped
-
-    def _enhance_data(self, data):
-        return data
-
-    def _data_cleansing(self, data):
-        return data
-
-    def import_data(self, data, import_type="S"):
-        data = self._data_cleansing(data)
-        data = self._enhance_data(data)
-        if import_type == "S":
-            data = self._map_data(data, import_type)
-            data = self._type_conversion(data, "S")
-        elif import_type == "F":
-            data = self._map_data(data, import_type)
-            data = self._type_conversion(data, "F")
-        elif import_type == "O":
-            data = self._map_data(data, import_type)
-            data = self._type_conversion(data, "O")
-        return data
+        return self.dataframe
 
 
 class BaseCSVImport(BaseImport):
     def __init__(self):
         super().__init__()
+        self.datatypes = {}
+        self.mapping = {}
 
-    def import_csv(self, filename, skip_header=False, delimiter=",", import_type="S"):
-        result_data = []
-        with open(filename, "r") as inp_file:
-            csv_data = csv.reader(inp_file, delimiter=delimiter)
-            if skip_header:
-                next(csv_data)
-            for data in csv_data:
-                data = self.import_data(data, import_type)
-                if data:
-                    result_data.append(data)
+    def import_data(self, filename, delimiter=",", **kwargs):
+        if "datatypes" in kwargs:
+            self.datatypes = kwargs["datatypes"]
 
-        return result_data
+        if "mapping" in kwargs:
+            self.mapping = kwargs["mapping"]
+
+        self.dataframe = pd.read_csv(filename, delimiter=delimiter, dtype=self.datatypes)
+        super().import_data(mapping=self.mapping)
+        return self.dataframe
 
 
 class OptionVueImport(BaseCSVImport):
+    """" Import data from a CSV file that was exported in OptionVue
+
+         Todo: Futures import does not work correctly. Also the OptionVue export does not supply an expiration date
+               for futures contracts as of 17.FEB.2017.
+    """
 
     def __init__(self):
         super().__init__()
-        self.id_field = 0
-        self.type_field = 16
-
-        self.stock_mapping = {
-            "symbol": 37,
-            "date": 10,
-            "time": 7,
-            "description": 12,
-            "open": 18,
-            "high": 3,
-            "low": 4,
-            "close": 39,
-            "last": 1,
-            "prev_close": 32,
-            "volume": 5,
-            "change": 2,
-            "change_pct": 40,
-            "open_interest": 19,
-            "bid": 9,
-            "ask": 8,
-            "market_price": 17,
-            "atm_sv": 36
+        self.datatypes = {
+            "Time": "str",
+            "Date": "str",
+            "Exp.Date": "str"
         }
+        self.mapping = {"Symbol": "symbol",
+                           "Item Type": "type",
+                           "Last": "last",
+                           "Change": "change",
+                           "High": "high",
+                           "Low": "low",
+                           "Volume": "volume",
+                           "Theta": "theta",
+                           "Time": "time",
+                           "Asked": "ask",
+                           "Bid": "bid",
+                           "Date": "date",
+                           "Delta": "delta",
+                           "Description": "description",
+                           "Exp.Date": "exp_date",
+                           "Gamma": "gamma",
+                           "Mid IV": "iv",
+                           "Market Price": "market_price",
+                           "Open": "open",
+                           "Open Interest": "open_interest",
+                           "Vega": "vega",
+                           "Call/Put": "p_c",
+                           "Previous Close": "prev_close",
+                           "Rho": "rho",
+                           "Strike Price": "strike",
+                           "SV": "atm_sv"}
 
-        self.options_mapping = {
-            "base_symbol": 37,
-            "exp_date": 13,
-            "date": 10,
-            "time": 7,
-            "p_c": 26,
-            "strike": 34,
-            "dte": 41,
-            "bid": 9,
-            "ask": 8,
-            "market_price": 17,
-            "volume": 5,
-            "open_interest": 19,
-            "iv": 15,
-            "delta": 11,
-            "theta": 6,
-            "gamma": 14,
-            "vega": 24,
-            "rho": 33
-        }
+    def _data_cleansing(self):
+        #drop columns that are not needed
+        self.dataframe.drop(["Original Price", "Prob.Finish.ITM", "Projected Volty", "Time Premium", "Ask IV",
+                             "At Price", "Existing Posn.", "Bid IV", "Pcnt To Double", "Percent O/U", "Th.Price",
+                             "Trade"], axis=1, inplace=True)
 
-        self.futures_mapping = {
-            "symbol": 37,
-            "exp_date": 13,
-            "date": 10,
-            "time": 7,
-            "description": 12,
-            "dte": 41,
-            "open": 18,
-            "high": 3,
-            "low": 4,
-            "close": 39,
-            "prev_close": 32,
-            "last": 1,
-            "volume": 5,
-            "change": 2,
-            "change_pct": 40,
-            "open_interest": 19,
-            "bid": 9,
-            "ask": 8,
-            "market_price": 17,
-            "atm_sv": 36
-        }
+        #fill NaN values for columns and set datatypes
+        self.dataframe["volume"].fillna(0, inplace=True)
+        self.dataframe["volume"].astype(int)
+        self.dataframe["open_interest"].fillna(0, inplace=True)
+        self.dataframe["open_interest"].astype(int)
+        self.dataframe["exp_date"].fillna("", inplace=True)
 
-    def _enhance_data(self, data):
-        data = self._data_cleansing(data)
-        if data:
-            # Extract Symbol
-            symbol = data[self.id_field].split()
-            if len(symbol[0]) != 3:
-                # This is a future contract, only /ES will be imported right now
-                # Todo: Extract the future symbol from the ID
-                data.append("ES")
-            else:
-                data.append(symbol[0])
-            self.stock_mapping["symbol"] = len(data) - 1
-            self.futures_mapping["symbol"] = len(data) - 1
-            self.options_mapping["base_symbol"] = len(data) - 1
+        # Filter out all rows that don't have a market price, these couldn't be traded
+        self.dataframe = self.dataframe[self.dataframe["market_price"] > 0.0]
 
-            # Add close data to current data
-            close = data[self.stock_mapping["market_price"]]
-            data.append(close)
-            self.futures_mapping["close"] = len(data) - 1
-            self.stock_mapping["close"] = len(data) - 1
+        # If date columns are filled, prefix them with the century and convert to datetime object
+        self.dataframe.loc[self.dataframe["date"] != "", "date"] = "20" + self.dataframe["date"]
+        self.dataframe.loc[self.dataframe["exp_date"] != "", "exp_date"] = "20" + self.dataframe["exp_date"]
+        self.dataframe["date"] = pd.to_datetime(self.dataframe["date"])
+        self.dataframe["exp_date"] = pd.to_datetime(self.dataframe["exp_date"])
 
-            # Add percent change
-            if close and data[self.stock_mapping["prev_close"]]:
-                change_pct = float(close) - float(data[self.stock_mapping["prev_close"]])
-                change_pct /= float(data[self.stock_mapping["prev_close"]])
-            else:
-                change_pct = 999
-            data.append(change_pct)
-            self.futures_mapping["change_pct"] = len(data) - 1
-            self.stock_mapping["change_pct"] = len(data) - 1
+    def _enhance_dataframe(self):
+        # Extract Symbol
+        self.dataframe["symbol"] = self.dataframe["symbol"].str.split(' ').str[0]
+        # Add close data to current data
+        self.dataframe["close"] = self.dataframe["market_price"]
+        # Add percent change
+        self.dataframe["change_pct"] = (self.dataframe["close"]
+                                        - self.dataframe["prev_close"]) / self.dataframe["prev_close"]
+        self.dataframe["dte"] = (self.dataframe["exp_date"] - self.dataframe["date"]).dt.days
 
-            # Add "days to expiration" DTE
-            if data[self.options_mapping["date"]] and data[self.options_mapping["exp_date"]]:
-                current_date = datetime.datetime.strptime(data[self.options_mapping["date"]], "%Y%m%d")
-                expiration_date = datetime.datetime.strptime(data[self.options_mapping["exp_date"]], "%Y%m%d")
-                data.append((expiration_date-current_date).days)
-            else:
-                data.append(999)
-            self.options_mapping["dte"] = len(data) - 1
-            self.futures_mapping["dte"] = len(data) - 1
+    def import_data(self, filename, delimiter=",", **kwargs):
+        """ Import CSV files exported from OptionVue. These files contain stocks, futures and options data
+            in the same file. The export structure is dynamic, depending on the list selected in OptionVue
+        """
+        super().import_data(filename, delimiter, **kwargs)
 
-        return data
+        #self.dataframe.to_csv("./Data/OptionVue/conv.csv", index=False, float_format='%.12g')
 
-    def _data_cleansing(self, data):
-        if float(data[self.stock_mapping["market_price"]]) <= 0:
-            return []
-
-        # Add century to date format yyyyMMdd
-        if data[self.stock_mapping["date"]]:
-            data[self.stock_mapping["date"]] = "20" + data[self.stock_mapping["date"]]
-        if data[self.options_mapping["exp_date"]]:
-            data[self.options_mapping["exp_date"]] = "20" + data[self.options_mapping["exp_date"]]
-
-        return data
-
-    def import_csv(self, filename, skip_header=False, delimiter=",", import_type="OV"):
-        stock_data = []
-        option_data = []
-        future_data = []
-        with open(filename, "r") as inp_file:
-            csv_data = csv.reader(inp_file, delimiter=delimiter)
-            if skip_header:
-                next(csv_data)
-            for data in csv_data:
-                data = self._enhance_data(data)
-                if data:
-                    if data[self.type_field] == "S":
-                        data = self._type_conversion(self._map_data(data, "S"), "S")
-                        stock_data.append(data)
-                    elif data[self.type_field] == "F":
-                        data = self._type_conversion(self._map_data(data, "F"), "F")
-                        future_data.append(data)
-                    elif data[self.type_field] in ["O", "G"]:
-                        data = self._type_conversion(self._map_data(data, "O"), "O")
-                        option_data.append(data)
+        stock_data = self.dataframe[self.dataframe["type"] == "S"]
+        option_data = self.dataframe[self.dataframe["type"] == "G"].append(self.dataframe[self.dataframe["type"] == "O"])
+        future_data = self.dataframe[self.dataframe["type"] == "F"]
 
         return stock_data, future_data, option_data
+
+
+class YahooStockImport(BaseImport):
+    _symbol_pickle_filename = "./Data/Yahoo/sp500tickers.pkl"
+    _stock_dir = "./Data/Yahoo/Stocks"
+
+    def __init__(self):
+        super().__init__()
+        # This is the mapping from Yahoo's web-data to the fieldnames used internally in QuantiPy
+        self.mapping = {
+            "Date": "date",
+            "Open": "open",
+            "High": "high",
+            "Low": "low",
+            "Volume": "volume",
+            "Close": "close",
+            "Description": "description",
+            "Symbol": "symbol"
+        }
+
+    def _enhance_data(self):
+        # Last data = close
+        self.dataframe["last"] = self.dataframe["close"]
+        # Previous close from previously processed data
+        self.dataframe["prev_close"] = self.dataframe["close"].shift(1)
+        # Open Interest, yahoo doesn't have this info so set to 0
+        self.dataframe["open_interest"] = 0
+        # Market price is set to close, because no bid/ask available
+        self.dataframe["market_price"] = self.dataframe["close"]
+        # Bid/ask is set to close
+        self.dataframe["bid"] = self.dataframe["close"]
+        self.dataframe["ask"] = self.dataframe["close"]
+        # Time is always EOD
+        self.dataframe["time"] = datetime.time(22, 0)
+        # Create change and change percent from previous
+        self.dataframe["change"] = self.dataframe["close"] - self.dataframe["prev_close"]
+        self.dataframe["change_pct"] = self.dataframe["change"] / self.dataframe["prev_close"]
+
+    def _web_load_symbols(self):
+        resp = requests.get('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+        soup = bs.BeautifulSoup(resp.text, "lxml")
+        table = soup.find('table', {'class': 'wikitable sortable'})
+        tickers = []
+        for row in table.findAll('tr')[1:]:
+            ticker, description = row.findAll('td')[0].text, row.findAll('td')[1].text
+            tickers.append((ticker, description))
+
+        with open(self._symbol_pickle_filename, "wb") as f:
+            pickle.dump(tickers, f)
+        return tickers
+
+    def _load_symbols(self):
+        if os.path.exists(self._symbol_pickle_filename):
+            with open(self._symbol_pickle_filename, "rb") as f:
+                tickers = pickle.load(f)
+        else:
+            tickers = self._web_load_symbols()
+        return tickers
+
+    def import_data(self, stock_symbol=[], from_date="2001-01-01", to_date="2099-01-01",
+                    reload_sp500_symbols=False, reload_data=False, **kwargs):
+        if not os.path.exists(self._stock_dir):
+            os.makedirs(self._stock_dir)
+
+        symbols = []
+        if stock_symbol:
+            symbols = stock_symbol
+        else:
+            if reload_sp500_symbols:
+                symbols = self._web_load_symbols()
+            else:
+                symbols = self._load_symbols()
+
+        if not symbols:
+            return
+
+        start_date = datetime.datetime.strptime(from_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(to_date, "%Y-%m-%d")
+
+        del self.dataframe
+        self.dataframe = pd.DataFrame()
+
+        for symbol in symbols:
+            if type(symbol) == str:
+                symbol_to_load, description = symbol, symbol
+            else:
+                symbol_to_load, description = symbol[0], symbol[1]
+
+            df = pd.DataFrame()
+            if reload_data or not os.path.exists(self._stock_dir + "/{}.csv".format(symbol_to_load)):
+                try:
+                    df = web.DataReader(symbol_to_load, 'yahoo', start_date, end_date)
+                    df["Description"] = description
+                    df["Symbol"] = symbol_to_load
+                    df.to_csv(self._stock_dir + "/{}.csv".format(symbol_to_load))
+                    df.reset_index(inplace=True)
+                except:
+                    continue
+            else:
+                with open(self._stock_dir + "/{}.csv".format(symbol_to_load)) as datafile:
+                    df = pd.read_csv(self._stock_dir + "/{}.csv".format(symbol_to_load), parse_dates=True)
+                    # Filter all dates that are not within the selected period. Filtering a vector should be faster than
+                    # Looping through csv
+                    df = df[(df["Date"] >= from_date) & (df["Date"] <= to_date)]
+
+            self.dataframe = self.dataframe.append(df)
+
+        super().import_data()
+        return self.dataframe
