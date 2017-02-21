@@ -1,95 +1,69 @@
-import datetime
+from abc import ABCMeta, abstractmethod
+import pandas as pd
+from quantipy.data_management.data_import import YahooStockImport
+from quantipy.basics.event import MarketEventStocks
 
 
-class StocksData(object):
-    def __init__(self):
-        self.symbol = ""
-        self.date = datetime.date.today()
-        self.time = datetime.datetime.now().time()
-        self.description = ""
-        self.open = 0.0
-        self.high = 0.0
-        self.low = 0.0
-        self.close = 0.0
-        self.last = 0.0
-        self.prev_close = 0.0
-        self.volume = 0
-        self.change = 0.0
-        self.change_pct = 0.0
-        self.open_interest = 0
-        self.bid = 0.0
-        self.ask = 0.0
-        self.market_price = 0.0
-        self.atm_iv = 0.0
-        self.atm_sv = 0.0
+class DataHandler(object):
+    __metaclass__ = ABCMeta
 
-    def set_data(self, data):
-        keys = self.__dict__.keys()
-        if len(keys) == len(data):
-            for index, key in enumerate(keys):
-                self.__setattr__(key, data[index])
-        else:
-            raise IndexError
+    @abstractmethod
+    def get_latest_data(self,N=1):
+        raise NotImplementedError("get_latest_data() not implemented")
+
+    @abstractmethod
+    def update_data(self):
+        raise NotImplementedError("update_data() not implemented")
 
 
-class OptionsData(object):
-    def __init__(self):
-        self.base_symbol = ""
-        self.exp_date = datetime.date.today()
-        self.date = datetime.date.today()
-        self.time = datetime.datetime.now().time()
-        self.strike = 0.0
-        self.p_c = ""
-        self.dte = 0
-        self.bid = 0.0
-        self.ask = 0.0
-        self.market_price = 0.0
-        self.volume = 0
-        self.open_interest = 0
-        self.iv = 0.0
-        self.delta = 0.0
-        self.theta = 0.0
-        self.gamma = 0.0
-        self.vega = 0.0
-        self.rho = 0.0
+class OptionVueCSVHandler(DataHandler):
+    def __init__(self, event_queue, filename):
+        self.event_queue = event_queue
+        self.filename = filename
 
-    def set_data(self, data):
-        keys = self.__dict__.keys()
-        if len(keys) == len(data):
-            for index, key in enumerate(keys):
-                self.__setattr__(key, data[index])
-        else:
-            raise IndexError
+        self.data = {}
+        self.latest_data = {}
+        self.continue_backtest = True
 
+        #self.datastream = OptionVueImport()
+        #self.stocks_data, self.futures_data, self.options_data = self.datastream.import_data(self.filename)
 
-class FuturesData(object):
-    def __init__(self):
-        self.symbol = ""
-        self.exp_date = datetime.date.today()
-        self.date = datetime.date.today()
-        self.time = datetime.datetime.now().time()
-        self.description = ""
-        self.dte = 0
-        self.open = 0.0
-        self.high = 0.0
-        self.low = 0.0
-        self.close = 0.0
-        self.prev_close = 0.0
-        self.last = 0.0
-        self.volume = 0
-        self.change = 0.0
-        self.change_pct = 0.0
-        self.open_interest = 0
-        self.bid = 0.0
-        self.ask = 0.0
-        self.market_price = 0.0
-        self.atm_iv = 0.0
-        self.atm_sv = 0.0
+class YahooHistoricalHander(DataHandler):
+    def __init__(self, event_queue, symbols):
+        self.event_queue = event_queue
+        self.symbols = symbols
 
-    def set_data(self, data):
-        keys = self.__dict__.keys()
-        if len(keys) == len(data):
-            for index, key in enumerate(keys):
-                self.__setattr__(key, data[index])
-        else:
-            raise IndexError
+        self.data = pd.DataFrame()
+        self.latest_data = pd.DataFrame()
+        self.continue_backtest = True
+
+        self.datastream = YahooStockImport()
+        self.data = self.datastream.import_data(self.symbols)
+        self.data.reset_index(inplace=True)
+        self.data.set_index(["symbol", "date"], inplace=True)
+        self.data.sort_index(inplace=True)
+
+        self.iterator = {}
+        for symbol, new_df in self.data.groupby(level=0):
+            self.iterator[symbol] = self.data.loc[symbol].iterrows()
+
+        #self.generator = self._get_next_data()
+
+    def _get_next_data(self, symbol):
+        return self.data[symbol].next()
+        # for date, new_df in self.data.groupby(level=0):
+        #     yield new_df
+
+    def get_latest_data(self, no=1, symbol=[]):
+        pass
+
+    def update_data(self):
+        for symbol in self.symbols:
+            try:
+                df = next(self.iterator[symbol])
+            except StopIteration:
+                self.continue_backtest = False
+            else:
+                if df:
+                    self.latest_data[symbol] = self.latest_data[symbol].append(df)
+                    #self.event_queue.put(MarketEventStocks(df))

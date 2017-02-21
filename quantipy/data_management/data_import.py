@@ -5,6 +5,7 @@ import requests
 import bs4 as bs
 import pandas as pd
 import pandas_datareader as web
+from quantipy.basics.data_struct import StocksData, OptionsData, FuturesData
 
 class BaseImport(object):
     mapping = {}

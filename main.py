@@ -1,6 +1,6 @@
 #ds.convert_optionvue_csv("./Data/OptionVue/20150105.csv")
 
-import quantipy.basics.data as qdata
+import quantipy.basics.data_struct as qdata
 
 import quantipy.data_management.data_import as conv
 
@@ -18,12 +18,88 @@ import pandas as pd
 #     print(stock)
 
 import quantipy.data_management.data_import as di
+
 imp_yahoo = di.YahooStockImport()
+yhdf = imp_yahoo.import_data(stock_symbol=["AAPL","BA","C"], from_date="2010-05-01", to_date="2010-05-05")
+yhdf.set_index(["date","symbol"],inplace=True)
+from quantipy.basics.data_struct import StocksData
+import datetime
+yhdf.sort_index()
 
-stocks = imp_yahoo.import_data(stock_symbol=["T"], from_date="1970-01-01", to_date="2017-02-16", reload_data=False,
-                               reload_sp500_symbols=False)
+# for date, new_df in yhdf.groupby(level=0):
+#     print("Date: {}".format(date))
+#     for symbol, data in new_df.loc[date].iterrows():
+#         #dn = dn.append(yhdf[date,symbol])
+#         #print(yhdf.loc[date,symbol])
+#         #dn.loc[(symbol, date)] = pd.DataFrame(data)
+#         print("   Symbol: {}  Open: {}".format(symbol, data["open"]))
+#
+# print(dn)
+#for (symbol, date), data in yhdf.iterrows():
+#    print("Sym: {}  Date: {} Data: {} ".format(symbol, date, data["open"]))
 
-print(stocks.head())
+
+
+# stock = StocksData()
+# stock.symbol = "AAPL"
+# stock.ask = 123.45
+# stock.date = datetime.datetime.now()
+#
+# df = pd.DataFrame(columns=["symbol","date"])
+#
+# #print(stock.to_pandas())
+# df.set_index(["symbol", "date"], inplace=True)
+#
+# ds = stock.to_pandas_df()
+# df = df.append(ds)
+# stock.symbol = "BA"
+# stock.ask = 37.45
+# stock.date = datetime.datetime.now()
+# ds = stock.to_pandas_df()
+# df = df.append(ds)
+#
+# dict1 = {}
+# for symbol, time in df.index.values:
+#     print(symbol)
+#     print(df.loc[[,stock.date]][["ask","bid"]])
+
+#print(dict1)
+#df = df.append(ds)
+
+#print(df.tail())
+# stocks = imp_yahoo.import_data(stock_symbol=["C", "BA", "T"], from_date="2000-01-01", to_date="2017-02-16", reload_data=False,
+#                                reload_sp500_symbols=False)
+#
+# stocks.set_index(["symbol", "date"], inplace=True)
+# stocks.sort_index(inplace=True)
+# #stocks = stocks.swaplevel("symbol", "date")
+# print(stocks.loc[["BA", "T"]])
+#print(stocks.iloc[-5:-1])
+
+# dict1 = [{
+#         "val1": "A",
+#         "val2": "1",
+#         "val3": "2.3"
+# }]
+#
+# df = pd.DataFrame(columns=dict1[0].keys())
+# df = df.append(dict1)
+#df.loc[len(df)]=["1"]
+#print(df)
+
+
+import quantipy.basics.data as qd
+events = []
+dict1 = {}
+yahoo = qd.YahooHistoricalHander(events, ["BA", "T"])
+
+
+yahoo.update_data()
+yahoo.update_data()
+yahoo.update_data()
+yahoo.update_data()
+
+
 # for stock in stocks:
 #     print(stock)
 

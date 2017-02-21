@@ -1,6 +1,5 @@
 Data
     ## This is just a folder, not a package
-
     Database
         ## Here will be the database file(s)
     [DataProvider]
@@ -10,11 +9,9 @@ quantipy{PKG}
     ## Main package for Quantipy
     data_management{PKG}
         ## Package for everything that has to do with data handling
-
         sqlite_wrapper.py  ## Module to wrap sqlite3 functionality
         mysql_wrapper.py   ## Module to wrap mySQL functionality
-        data_conversion.py ## Module with classes that convert raw data to database format, this is done with
-                           ## lists instead of dictionaries (or pandas) for performance reason
+        data_conversion.py ## Module with classes that convert raw data to internal format
         data_setup.py      ## Module to load data from raw files into database
 
     systems{PKG}

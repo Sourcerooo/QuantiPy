@@ -1,0 +1,34 @@
+QuantiPy is build as an event-driven-system. This will allow the system to be fed with historical as well as live data
+without changing the logic significantly.
+
+[Todo: Think about a vectorized backtesting module to speed up the testing and parameter optimization cases]
+
+Event:
+    Base class for all events that can be handled. This can be for example
+        MARKET - This signal contains the inbound market data
+        SIGNAL - System has found an entry/adjust/exit signal which needs to be executed
+        ORDER - Portfolio handles signals and creates these order events that should be executed on the platform
+        FILL - The platform API will create these events when an order was actually executed
+    Events can be subscribed by different other modules
+
+Event_Queue:
+    Will hold all events that need to be processed
+
+DataHandler:
+    Class that will create the MARKET events. This will be the base class and derived classes might be historical
+    data or different data feeds
+
+System:
+    Base class from which all other systems are derived. This class subscribes MARKET events and  will create SIGNAL
+    events based on the information it has.
+    This class will also subscribe to FILL events in order to track the executed trades
+
+Portfolio:
+    Portfolio subscribes SIGNAL events and will create ORDER events. The portfolio adjusts the position size and can
+    intervene if exposure is too high or margin is depleted
+
+Execution_Handler:
+    Class subscribesto ORDER events and will generate FILL events. The execution will either be simulated in backtest or
+    have a direct broker connection. When in simulation mode, this class will add slippage to the order and return
+    fees this transaction has cost
+
