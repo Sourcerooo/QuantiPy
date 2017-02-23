@@ -1,0 +1,2 @@
+"""" Todo: At the moment, the events are just in a simple queue that every part has access to. Better solution
+    would probably be an event handler, to which all modules subscribe to and which dispatches to all its subscribers"""

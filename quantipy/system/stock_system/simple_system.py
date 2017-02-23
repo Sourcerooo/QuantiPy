@@ -1,8 +1,9 @@
-from quantipy.system.base_system import BaseSystem
-import quantipy.basics.event as qEvent
+import quantipy.event.event as qEvent
+from quantipy.system.base import AbstractSystem
+import uuid
 
 
-class BuyAndHoldSystem(BaseSystem):
+class BuyAndHoldSystem(AbstractSystem):
     def __init__(self, event_queue, symbols, data_handler):
         self.data_handler = data_handler
         self.event_queue = event_queue
@@ -19,12 +20,16 @@ class BuyAndHoldSystem(BaseSystem):
         if event.type != qEvent.MARKET_EVENT_STOCKS:
             return
         else:
-            data = self.data_handler.get_latest_data(symbol=symbols, no=1)
-            data.set_index(columns=["symbol","date"])
-            for symbol in self.symbols:
-                if self.buy_indicator[symbol]:
-                    continue
-                else:
-                    self.buy_indicator[symbol] = True
-                    signal = qEvent.SignalEvent(data.loc[symbol][0], qEvent.BUY)
-                    self.event_queue.put(signal)
+            symbol = event.data["symbol"]
+            if symbol not in self.symbols:
+                return
+
+            if not self.buy_indicator[symbol]:
+                self.buy_indicator[symbol] = True
+                trade_data = {"trade_id": uuid.uuid4(),
+                              "market_price": event.data["market_price"],
+                              "bid": event.data["bid"],
+                              "ask": event.data["ask"],
+                              "buy_sell_indicator": qEvent.BUY}
+                trade = qEvent.TradeEvent(qEvent.BUY, trade_data)
+                self.event_queue.put(trade)

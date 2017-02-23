@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABCMeta
-from quantipy.basics.event import SignalEvent
+
 
 def create_system_result(**kwargs):
     result = {
@@ -46,7 +46,7 @@ def create_system_parameter(**kwargs):
     return parameter
 
 
-class BaseSystem(object):
+class AbstractSystem(object):
     """ This class is the base class for all analytical systems """
 
     __metaclass__ = ABCMeta
@@ -58,6 +58,7 @@ class BaseSystem(object):
     @abstractmethod
     def calculate(self, event):
         raise NotImplementedError("Calculate() should be implemented in system class")
+
 
 
 

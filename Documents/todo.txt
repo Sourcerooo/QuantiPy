@@ -1,4 +1,4 @@
 Design Decisions:
-    - Event-based vs. Iterative Design
+    - Event-based vs. Iterative vs. Vector Design
     - Which DB to use
     - Strategy-System-Portfolio Design

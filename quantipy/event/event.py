@@ -1,12 +1,12 @@
 MARKET_EVENT_STOCKS = "MARKET_STOCKS"
 MARKET_EVENT_OPTIONS = "MARKET_OPTIONS"
 MARKET_EVENT_FUTURES = "MARKET_FUTURES"
-SIGNAL_EVENT = "SIGNAL"
+TRADE_EVENT = "TRADE"
 ORDER_EVENT = "ORDER"
 FILL_EVENT = "FILL"
 
-BUY="buy"
-SELL="sell"
+BUY = "buy"
+SELL = "sell"
 
 
 class Event(object):
@@ -34,11 +34,11 @@ class MarketEventFutures(Event):
         super().__init__(MARKET_EVENT_FUTURES, market_data)
 
 
-class SignalEvent(Event):
-    def __init__(self, signal_data, buy_sell):
-        self.buy_sell = buy_sell
-        global SIGNAL_EVENT
-        super().__init__(SIGNAL_EVENT, signal_data)
+class TradeEvent(Event):
+    def __init__(self, buy_sell_indicator, trade_data):
+        self.buy_sell_indicator = buy_sell_indicator
+        global TRADE_EVENT
+        super().__init__(TRADE_EVENT, trade_data)
 
 
 class OrderEvent(Event):

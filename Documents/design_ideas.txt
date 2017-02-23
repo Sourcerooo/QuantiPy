@@ -6,7 +6,7 @@ without changing the logic significantly.
 Event:
     Base class for all events that can be handled. This can be for example
         MARKET - This signal contains the inbound market data
-        SIGNAL - System has found an entry/adjust/exit signal which needs to be executed
+        TRADE - System has found an entry/adjust/exit signal which needs to be executed
         ORDER - Portfolio handles signals and creates these order events that should be executed on the platform
         FILL - The platform API will create these events when an order was actually executed
     Events can be subscribed by different other modules

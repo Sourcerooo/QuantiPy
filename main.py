@@ -1,11 +1,5 @@
 #ds.convert_optionvue_csv("./Data/OptionVue/20150105.csv")
 
-import quantipy.basics.data_struct as qdata
-
-import quantipy.data_management.data_import as conv
-
-import pandas as pd
-
 
 
 #imp_ov = conv.OptionVueImport()
@@ -17,14 +11,12 @@ import pandas as pd
 # for stock in stocks:
 #     print(stock)
 
-import quantipy.data_management.data_import as di
-
-imp_yahoo = di.YahooStockImport()
-yhdf = imp_yahoo.import_data(stock_symbol=["AAPL","BA","C"], from_date="2010-05-01", to_date="2010-05-05")
-yhdf.set_index(["date","symbol"],inplace=True)
-from quantipy.basics.data_struct import StocksData
-import datetime
-yhdf.sort_index()
+# imp_yahoo = di.YahooStockImport()
+# yhdf = imp_yahoo.import_data(stock_symbol=["AAPL","BA","C"], from_date="2010-05-01", to_date="2010-05-05")
+# yhdf.set_index(["date","symbol"],inplace=True)
+# from quantipy.basics.data_struct import StocksData
+# import datetime
+# yhdf.sort_index()
 
 # for date, new_df in yhdf.groupby(level=0):
 #     print("Date: {}".format(date))
@@ -88,7 +80,7 @@ yhdf.sort_index()
 #print(df)
 
 
-import quantipy.basics.data as qd
+import quantipy.data_management.data_handler as qd
 events = []
 dict1 = {}
 yahoo = qd.YahooHistoricalHander(events, ["BA", "T"])
