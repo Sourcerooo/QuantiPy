@@ -5,8 +5,8 @@ TRADE_EVENT = "TRADE"
 ORDER_EVENT = "ORDER"
 FILL_EVENT = "FILL"
 
-BUY = "buy"
-SELL = "sell"
+BUY = "BOT"
+SELL = "SLD"
 
 
 class Event(object):

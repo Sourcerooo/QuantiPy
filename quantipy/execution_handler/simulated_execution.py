@@ -1,7 +1,7 @@
 import datetime
 
 import quantipy.execution_handler.base as base
-from quantipy.event.event import FillEvent
+from quantipy.event.event import FillEvent, ORDER_EVENT
 
 
 class SimulatedExecutionHandler(base.AbstractExecutionHandler):
@@ -17,9 +17,11 @@ class SimulatedExecutionHandler(base.AbstractExecutionHandler):
     def __init__(self, event_queue):
         self.event_queue = event_queue
 
-    def execute_order(self, event):
-        fill_data = event.data
-        fill_data["filled_at"] = datetime.datetime.now()
-        fill_event = FillEvent(fill_data)
-        self.event_queue.put(fill_event)
+    def handle_event(self, event):
+        if event.type == ORDER_EVENT:
+            fill_data = event.data
+            fill_data["filled_at"] = datetime.datetime.now()
+            fill_data["filled_price"] = fill_data["calc_price"]
+            fill_event = FillEvent(fill_data)
+            self.event_queue.put(fill_event)
 

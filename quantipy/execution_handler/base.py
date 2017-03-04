@@ -9,7 +9,7 @@ class AbstractExecutionHandler(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def execute_order(selfself, event):
+    def handle_event(self, event):
         """ Order events are processed and real orders will be created from the data supplied to the event.
             Once an actual order is filled a FillEvent will be triggered and put into the queue
 

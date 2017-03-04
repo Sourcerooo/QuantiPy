@@ -1,0 +1,18 @@
+10 [Data Handler] - > Get Data {Market Event}
+20 [Portfolio Handler ] -> Dispatch Market Event
+				=> [Portfolio] -> Update Positions
+				   => [Portfolio] -> Update Statistics
+				   => [Systems] -> Update Statistics
+				   => [Systems] -> Calculate { Trade Event }
+30 [Portfolio Handler ] -> Handle Trade Event
+				=> [Portfolio Handler] -> Create Order from Trade
+					=> [Portfolio] -> Size order
+					=> [Portfolio] -> Create Postion
+					=> [Risk Manager] -> Check risk for order / Intervene
+				=> [Portfolio Hanlder] -> Create Order { Order Event }
+40 [Portfolio Handler ] -> Handle Order event
+				=> [Execution Handler] -> Fill Order {Fill Event}
+50 [Portfolio Handler ] -> Handle Fill Order
+				=> [Portfolio] -> Modfiy Positions
+				   => [Portfolio] -> Update Statistics
+				   => [Systems] -> Update Statistics

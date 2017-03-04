@@ -81,15 +81,17 @@
 
 
 import quantipy.data_management.data_handler as qd
-events = []
+import queue
+
+events = queue.Queue()
 dict1 = {}
-yahoo = qd.YahooHistoricalHander(events, ["BA", "T"])
+yahoo = qd.YahooHistoricalHandler(events, ["BA", "T"])
 
 
-yahoo.update_data()
-yahoo.update_data()
-yahoo.update_data()
-yahoo.update_data()
+yahoo.stream_data()
+yahoo.stream_data()
+yahoo.stream_data()
+yahoo.stream_data()
 
 
 # for stock in stocks:

@@ -51,13 +51,17 @@ class AbstractSystem(object):
 
     __metaclass__ = ABCMeta
 
-
+    @abstractmethod
     def set_parameters(self, **kwargs):
         pass
 
     @abstractmethod
-    def calculate(self, event):
+    def calculate(self, data):
         raise NotImplementedError("Calculate() should be implemented in system class")
+
+    @abstractmethod
+    def update_statistic(self, data):
+        raise NotImplementedError
 
 
 

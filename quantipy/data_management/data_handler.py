@@ -12,7 +12,7 @@ class DataHandler(object):
         raise NotImplementedError("get_latest_data() not implemented")
 
     @abstractmethod
-    def update_data(self):
+    def stream_data(self):
         raise NotImplementedError("update_data() not implemented")
 
 
@@ -53,7 +53,7 @@ class YahooHistoricalHandler(DataHandler):
     def get_latest_data(self, no=1, symbol=[]):
         pass
 
-    def update_data(self):
+    def stream_data(self):
         #Get next date in dataframe
         try:
             current_date = next(self.iter_dates)
@@ -65,6 +65,7 @@ class YahooHistoricalHandler(DataHandler):
             return
 
         df = self.data.loc[current_date]
+        df.date = current_date
         for symbol in self.symbols:
             try:
                 if isinstance(df, pd.DataFrame):
@@ -80,3 +81,4 @@ class YahooHistoricalHandler(DataHandler):
                 if not ep1.empty:
                     self.latest_data[symbol] = ep1
                     self.event_queue.put(MarketEventStocks(ep1))
+        return current_date

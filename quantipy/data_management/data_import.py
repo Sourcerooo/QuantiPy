@@ -161,11 +161,19 @@ class YahooStockImport(BaseImport):
             "Low": "low",
             "Volume": "volume",
             "Close": "close",
+            "Adj Close": "adj_close",
             "Description": "description",
             "Symbol": "symbol"
         }
 
+
     def _enhance_data(self):
+        self.dataframe["factor"] = self.dataframe["close"] / self.dataframe["adj_close"]
+        self.dataframe["close"] = self.dataframe["adj_close"]
+        self.dataframe["open"] = self.dataframe["open"] / self.dataframe["factor"]
+        self.dataframe["high"] = self.dataframe["high"] / self.dataframe["factor"]
+        self.dataframe["low"] = self.dataframe["low"] / self.dataframe["factor"]
+
         # Last data = close
         self.dataframe["last"] = self.dataframe["close"]
         # Previous close from previously processed data
