@@ -9,7 +9,7 @@ import timeit
 
 symbols = ["BA"]
 event_queue = queue.Queue()
-yahoo_handler = data_handler.YahooHistoricalHandler(event_queue, symbols, "2016-01-01", "2016-01-05")
+yahoo_handler = data_handler.YahooHistoricalHandler(event_queue, symbols, "2016-01-01", "2016-02-20")
 exec_handler = sim_exec.SimulatedExecutionHandler(event_queue)
 simple_algo = simple_system.BuyAndHoldSystem(event_queue, symbols, yahoo_handler)
 portfolio = simple_portfolio.SimplePortfolio(event_queue, yahoo_handler, [simple_algo])

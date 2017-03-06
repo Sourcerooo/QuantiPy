@@ -9,10 +9,14 @@ class SimplePortfolio(base.AbstractPortfolio):
         self.data_handler = data_handler
         self.event_queue = event_queue
         self.portfolio_params = portfolio_params
-        self.positions = pd.DataFrame(columns=["system_id", "trade_id", "seq_no", "symbol", "calc_price",
-                                               "max_risk", "current_price", "filled_price", "gain_loss"])
+        self.positions = pd.DataFrame(columns=["symbol", "trade_id", "seq_no", "status", "system_id", "calc_price",
+                                               "volume", "max_risk", "current_price", "filled_price", "gain_loss"])
+        self.positions.set_index(["symbol", "trade_id", "seq_no"],inplace=True)
+        self.open_positions = self.positions
+        self.closed_positions = self.positions
         self.systems = systems
         self.statistic = SimpleStatistic.SimpleStatistic()
+
 
     def get_statistics(self):
         self.statistic.output("xx")
@@ -34,46 +38,37 @@ class SimplePortfolio(base.AbstractPortfolio):
 
     def size_order(self, order):
         order["calc_price"] = order["market_price"]
+        # Todo: Create position file with constant for position status
         position = {
+            "status": "CREA",
             "system_id": order["system_id"],
-            "trade_id": order["trade_id"],
-            "seq_no": order["seq_no"],
-            "symbol": order["symbol"],
             "calc_price": order["calc_price"],
+            "volume": order["amount"],
             "max_risk": order["calc_price"] * order["amount"],
             "current_price": order["calc_price"],
             "filled_price": 0,
             "gain_loss": 0
         }
-        self.positions = self.positions.append(position, ignore_index=True)
-        self.positions.set_index(["symbol"])
+        self.positions.loc[order["symbol"], str(order["trade_id"]), order["seq_no"]] = position
         self.positions.sort_index(inplace=True)
         return order
 
     def _fill_position(self, data):
-        #self.positions.set_value((self.positions["trade_id"] == data["trade_id"]), "filled_price", data["filled_price"])
-        self.positions.set_index(["symbol"])
-        self.positions.sort_index(inplace=True)
-        print(self.positions)
-        df =self.positions.at[data["symbol"]]
-        df.ix[df["trade_id"] == data["trade_id"], "filled_price"] = data["filled_price"]
-        self._update_position(data)
+        self.positions.loc[(data["symbol"], str(data["trade_id"]), data["seq_no"]), "filled_price"] = data["filled_price"]
+        self.positions.loc[(data["symbol"], str(data["trade_id"]), data["seq_no"]), "status"] = "OPEN"
+        #self._update_position(data)
 
     def _update_position(self, data):
-        self.positions.at[data["symbol"], "current_price"] = data["market_price"]
-        print("------------")
-        print(self.positions.at[data["symbol"], "current_price"])
-        print(self.positions.at[data["symbol"], "filled_price"])
-        self.positions.at[data["symbol"], "gain_loss"] = self.positions.at[data["symbol"], "current_price"] - self.positions.at[data["symbol"], "filled_price"]
-        # self.positions.loc[data["symbol"], "gain_loss"] = self.positions.loc[data["symbol"],"current_price"] - \
-        #                                                         self.positions.loc[data["symbol"],"filled_price"]
-
-        # self.positions.ix[self.positions["symbol"] == data["symbol"], "current_price"] = data["market_price"]
-        # self.positions.ix[self.positions["symbol"] == data["symbol"], "gain_loss"] = self.positions["current_price"] - \
-        #                                                                              self.positions["filled_price"]
+        if not self.open_positions.empty:
+            for key, row in self.positions.ix[self.open_positions.index.values].iterrows():
+                if (key[0] == "BA"):
+                    df.at[key, "xpz"] = row["y"] + row["z"]
+            self.positions.at[data["symbol"], "current_price"] = data["market_price"]
+            self.positions.at[data["symbol"], "gain_loss"] = self.positions.ix[[data["symbol"]], "current_price"] - \
+                                                             self.positions.ix[[data["symbol"]], "filled_price"]
 
     def _update_statistic(self):
-        total_gain_loss = self.positions["gain_loss"].sum()
-        total_cost = self.positions["filled_price"].sum()
-
-        self.statistic.calculate(total_cost, total_gain_loss)
+        if not self.positions.empty:
+            total_gain_loss = self.positions["gain_loss"].sum()
+            total_cost = self.positions["filled_price"].sum()
+            self.statistic.calculate(total_cost, total_gain_loss)
